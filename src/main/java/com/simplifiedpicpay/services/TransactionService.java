@@ -2,8 +2,10 @@ package com.simplifiedpicpay.services;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
+import com.simplifiedpicpay.services.Interfaces.INotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -25,14 +27,17 @@ public class TransactionService implements ITransactionService{
     @Autowired
     private ITransactionRepository transactionRepository;
 
+    @Autowired
+    private INotificationService notificationService;
+
     @Autowired RestTemplate restTemplate;
 
-    public void createTransaction(TransactionDto dto) throws Exception {
+    public Transaction createTransaction(TransactionDto dto) throws Exception {
         User sender = this.userService.findUserById(dto.senderId());
-        User receiver = this.userService.findUserById(dto.senderId());
+        User receiver = this.userService.findUserById(dto.receiverId());
 
         userService.validateTransaction(sender, dto.value());
-        
+
         boolean isAutorized = this.authorizeTransaction(sender, dto.value());
         if(!isAutorized){   
             throw new Exception("Transação não autorizada");
@@ -49,7 +54,15 @@ public class TransactionService implements ITransactionService{
             this.transactionRepository.save(transaction);
             this.userService.saveUser(sender);
             this.userService.saveUser(receiver);
+
+            this.notificationService.sendNotification(sender, "Transação realizada com sucesso");
+            this.notificationService.sendNotification(receiver, "Transação recebida com sucesso");
+
+        return transaction;
     }
+
+    @Override
+    public List<Transaction> getAll() {return this.transactionRepository.findAll();}
 
     private boolean authorizeTransaction(User sender, BigDecimal value){
         ResponseEntity<Map> authorizationResponse = restTemplate.getForEntity("https://run.mocky.io/v3/5794d450-d2e2-4412-8131-73d0293ac1cc", Map.class);
