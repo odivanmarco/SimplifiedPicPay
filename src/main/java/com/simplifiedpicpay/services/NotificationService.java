@@ -12,6 +12,7 @@ import com.simplifiedpicpay.services.Interfaces.INotificationService;
 
 @Service
 public class NotificationService implements INotificationService{
+    
     @Autowired
     private RestTemplate restTemplate;
     
@@ -21,7 +22,7 @@ public class NotificationService implements INotificationService{
 
         ResponseEntity<String> notificationResponse = restTemplate.postForEntity("https://run.mocky.io/v3/54dc2cf1-3add-45b5-b5a9-6bf7e7f1f4a6", notificationRequest, String.class);
 
-        if(!(notificationResponse.getStatusCode() == HttpStatus.OK)){
+        if((notificationResponse.getStatusCode() != HttpStatus.OK)){
             System.out.println("Erro ao enviar notifacação");
             throw new Exception("Serviço de notificação com problema");
         }
